@@ -1,0 +1,19 @@
+---
+applications:
+- name: adquisicion-digital-devtools
+  memory: 256M
+  instances: 1
+  buildpacks:
+    - nodejs_buildpack
+  command: npm start
+  services: []
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info
+    DEVTOOLS_URL: https://adquisicion-digital-devtools.cfapps.us10-001.hana.ondemand.com
+    BACKEND_URL: https://adquisicion-digital-btp.cfapps.us10-001.hana.ondemand.com
+    ENABLE_DEVTOOLS_LOGGING: true
+    MAX_LOGS: 2000
+    LOG_RETENTION_DAYS: 3
+  routes:
+  - route: adquisicion-digital-devtools.cfapps.us10-001.hana.ondemand.com

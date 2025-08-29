@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevTools - Monitor de Requests</title>
+  <!-- Material icons + Materialize for a material look -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <main class="right-pane">
+      <!-- Encabezado -->
+      <header>
+        <h1>🚀 DevTools - Monitor de Requests</h1>
+        <span id="last-update" class="timestamp">Última actualización: --:--:--</span>
+        <div class="environment-info">
+          <span id="backend-status" class="status-badge offline">Backend: Desconectado</span>
+          <span id="total-logs" class="status-badge">Logs: 0</span>
+        </div>
+      </header>
+
+      <!-- Barra de botones (toolbar) -->
+      <div class="toolbar" id="controls-section">
+        <div class="toolbar-left">
+          <button id="refresh" class="btn btn-panel" title="Actualizar"><i class="material-icons">refresh</i><span class="toolbar-label">Refresh</span></button>
+          <button id="auto-update" class="btn btn-panel" title="Auto (5s)"><i class="material-icons">autorenew</i><span class="toolbar-label">Auto (5s)</span></button>
+          <button id="healthcheck" class="btn btn-panel" title="Healthcheck"><i class="material-icons">health_and_safety</i><span class="toolbar-label">Healthcheck</span></button>
+          <button id="clear" class="btn btn-panel" title="Limpiar Logs"><i class="material-icons">delete_sweep</i><span class="toolbar-label">Clean Logs</span></button>
+          <button id="stats" class="btn btn-panel" title="Estadísticas"><i class="material-icons">analytics</i><span class="toolbar-label">Stats</span></button>
+        </div>
+        <div class="toolbar-right">
+          <button id="connection-test" class="btn btn-panel" title="Test Backend Connection"><i class="material-icons">wifi</i><span class="toolbar-label">Test Connection</span></button>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="stats-section" id="stats-section" style="display: none;">
+        <div class="row">
+          <div class="col s12 m3">
+            <div class="card blue darken-1">
+              <div class="card-content white-text">
+                <span class="card-title">Total Requests</span>
+                <h4 id="stat-total">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col s12 m3">
+            <div class="card green darken-1">
+              <div class="card-content white-text">
+                <span class="card-title">Success (2xx)</span>
+                <h4 id="stat-success">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col s12 m3">
+            <div class="card orange darken-1">
+              <div class="card-content white-text">
+                <span class="card-title">Client Errors (4xx)</span>
+                <h4 id="stat-client-errors">0</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col s12 m3">
+            <div class="card red darken-1">
+              <div class="card-content white-text">
+                <span class="card-title">Server Errors (5xx)</span>
+                <h4 id="stat-server-errors">0</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s12 m6">
+            <div class="card">
+              <div class="card-content">
+                <span class="card-title">Avg Response Time</span>
+                <h4 id="stat-avg-time">0ms</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col s12 m6">
+            <div class="card">
+              <div class="card-content">
+                <span class="card-title">Recent Errors</span>
+                <div id="recent-errors-list">
+                  <p>No recent errors</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-card card">
+        <div class="card-content">
+          <span class="card-title">Resumen de Requests (últimos logs)</span>
+          <canvas id="requests-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabla de logs -->
+      <div class="section">
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Método</th>
+              <th>URL</th>
+              <th>Estado</th>
+              <th>Tiempo (ms)</th>
+              <th>IP</th>
+              <th>Source</th>
+            </tr>
+            <tr class="filters-row">
+              <th></th>
+              <th>
+                <select id="method-filter" class="browser-default" aria-label="Filtro método" title="Filtrar por método">
+                  <option value="">Todos</option>
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </th>
+              <th>
+                <input type="text" id="url-filter" placeholder="Buscar en la URL" />
+              </th>
+              <th>
+                <select id="status-filter" class="browser-default" aria-label="Filtro estado" title="Filtrar por estado">
+                  <option value="">Todos</option>
+                  <option value="200">200</option>
+                  <option value="400">400</option>
+                  <option value="500">500</option>
+                </select>
+              </th>
+              <th>
+                <button id="apply-filters" class="btn btn-blue">Aplicar</button>
+              </th>
+              <th></th>
+              <th>
+                <select id="source-filter" class="browser-default" aria-label="Filtro source" title="Filtrar por source">
+                  <option value="">Todos</option>
+                  <option value="main-backend">Main Backend</option>
+                  <option value="devtools">DevTools</option>
+                </select>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="logs-body">
+            <tr class="help-row">
+              <th colspan="7">No hay registros aún. Esperando logs del backend principal...</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Dashboard script -->
+  <script src="dashboard.js"></script>
+
+  <!-- Request detail modal -->
+  <div id="request-modal" class="rd-modal" aria-hidden="true">
+    <div class="rd-modal-overlay" id="rd-modal-overlay"></div>
+    <div class="rd-modal-box" role="dialog" aria-modal="true">
+      <header class="rd-modal-header">
+        <h6 id="rd-modal-title">Request details</h6>
+        <button id="rd-modal-close" class="btn btn-grey">Cerrar</button>
+      </header>
+      <div class="rd-modal-body">
+        <div class="rd-meta"><strong>Meta:</strong> <span id="rd-meta-text"></span></div>
+        <div class="rd-sections">
+          <section>
+            <h4>Request Headers</h4>
+            <pre id="rd-request-headers">-</pre>
+          </section>
+          <section>
+            <h4>Request Body</h4>
+            <pre id="rd-request-body">-</pre>
+          </section>
+          <section>
+            <h4>Response Headers</h4>
+            <pre id="rd-response-headers">-</pre>
+          </section>
+          <section>
+            <h4>Response Body</h4>
+            <pre id="rd-response-body">-</pre>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
